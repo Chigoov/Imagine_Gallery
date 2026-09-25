@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Papan Foto Pribadi</string>
+    <string name="title_activity_main">Papan Foto Pribadi</string>
+    <string name="package_name">com.privateboard.app</string>
+    <string name="custom_url_scheme">com.privateboard.app</string>
+</resources>

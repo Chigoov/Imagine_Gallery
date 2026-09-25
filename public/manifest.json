@@ -1,0 +1,22 @@
+{
+  "name": "Papan Foto Pribadi",
+  "short_name": "Papan Foto",
+  "description": "Galeri foto pribadi yang tersimpan di perangkat.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090A0B",
+  "theme_color": "#090A0B",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192' fill='%23F59E0B'><rect width='192' height='192' rx='40' fill='%2317181C'/><path d='M130 40H62C50.9 40 42 48.9 42 60v72c0 11.1 8.9 20 20 20h68c11.1 0 20-8.9 20-20V60c0-11.1-8.9-20-20-20zm-8 84H70V68h52v56z' fill='%23F59E0B'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%23F59E0B'><rect width='512' height='512' rx='96' fill='%2317181C'/><path d='M350 110H162C130 110 104 136 104 168v176c0 32 26 58 58 58h188c32 0 58-26 58-58V168c0-32-26-58-58-58zm-24 204H186V176h140v138z' fill='%23F59E0B'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

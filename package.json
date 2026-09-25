@@ -1,0 +1,40 @@
+{
+  "name": "private-photo-fantasy-board",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "android:build": "npm run build && npx cap sync android && cmd /c \"set JAVA_HOME=C:\\Program Files\\Android\\Android Studio\\jbr&& set ANDROID_HOME=C:\\Users\\HYPE AMD\\AppData\\Local\\Android\\Sdk&& set PATH=%JAVA_HOME%\\bin;%PATH%&& cd android && gradlew.bat assembleDebug && copy /Y app\\build\\outputs\\apk\\debug\\app-debug.apk ..\\Private_Photo_Fantasy_Board.apk\"",
+    "app:start": "npm run build && npx cap copy @capacitor-community/electron && npm --prefix electron run electron:start",
+    "app:pack": "npm run build && npx cap copy @capacitor-community/electron && npm --prefix electron run electron:pack",
+    "app:make": "npm run build && npx cap copy @capacitor-community/electron && npm --prefix electron run electron:make"
+  },
+  "dependencies": {
+    "@capacitor/android": "^5.7.8",
+    "@capacitor/core": "^5.7.8",
+    "clsx": "^2.1.1",
+    "dexie": "^4.0.11",
+    "dexie-react-hooks": "^1.1.7",
+    "lucide-react": "^1.16.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^3.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.21",
+    "fake-indexeddb": "^6.2.5",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.0",
+    "vitest": "^3.0.7"
+  }
+}
