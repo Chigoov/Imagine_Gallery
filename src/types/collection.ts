@@ -5,6 +5,7 @@ export interface Collection {
   cover_photo_id?: string;
   cover_photo_url?: string;
   photo_count: number;
+  ready_count?: number;
   sort_order: number;
   created_at: string;
   updated_at: string;

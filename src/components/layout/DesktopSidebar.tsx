@@ -34,12 +34,14 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
       {/* App branding */}
       <div className="p-5 flex items-center justify-between border-b border-subtle">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-player shadow-md font-bold text-base">
-            ✦
-          </div>
+          <img
+            src="/favicon.png"
+            alt="Imagine Gallery"
+            className="w-8 h-8 rounded-lg object-contain shadow-md"
+          />
           <div>
-            <h1 className="text-sm font-semibold text-app-primary tracking-wide">PAPAN PRIBADI</h1>
-            <p className="text-[10px] text-app-muted uppercase tracking-wider">Ruang Pribadi Lokal</p>
+            <h1 className="text-sm font-semibold text-app-primary tracking-wide">IMAGINE GALLERY</h1>
+            <p className="text-[10px] text-app-muted uppercase tracking-wider">Papan Foto Pribadi</p>
           </div>
         </div>
         <button

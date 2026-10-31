@@ -76,33 +76,105 @@ export class PhotoRepository {
   public static async importFiles(files: FileList | File[]): Promise<Photo[]> {
     const selected = Array.from(files).filter((file) => file.size > 0 && (imageTypes.has(file.type) || (!file.type && imageExtensions.test(file.name))));
     if (!selected.length) throw new Error('Pilih foto berformat JPEG, PNG, WebP, GIF, BMP, atau AVIF.');
-    const byIdentity = new Map<string, Photo | null>();
-    for (const photo of await db.photos.toArray()) {
-      if (photo.remote_url) continue;
-      const key = identityKey(photo.original_filename, photo.file_size, photo.relative_path || '', photo.last_modified);
-      byIdentity.set(key, byIdentity.has(key) ? null : photo);
+    
+    const existingPhotos = (await db.photos.toArray()).filter((p) => !p.remote_url);
+
+    // Multi-tier indexing for unambiguous matching:
+    // 1. Exact match (name, size, relative_path, last_modified)
+    const exactMap = new Map<string, Photo | null>();
+    // 2. Content match (name, size, last_modified) regardless of relative_path
+    const contentMap = new Map<string, Photo[]>();
+    // 3. Name & size match
+    const nameAndSizeMap = new Map<string, Photo[]>();
+
+    for (const p of existingPhotos) {
+      const eKey = identityKey(p.original_filename, p.file_size, p.relative_path || '', p.last_modified);
+      exactMap.set(eKey, exactMap.has(eKey) ? null : p);
+
+      const cKey = JSON.stringify([p.original_filename, p.file_size, p.last_modified]);
+      const cList = contentMap.get(cKey) || [];
+      cList.push(p);
+      contentMap.set(cKey, cList);
+
+      const nsKey = JSON.stringify([p.original_filename, p.file_size]);
+      const nsList = nameAndSizeMap.get(nsKey) || [];
+      nsList.push(p);
+      nameAndSizeMap.set(nsKey, nsList);
     }
+
+    const claimedPriorIds = new Set<string>();
     const prepared = new Map<string, { photo: Photo; file: File; data: PhotoFile }>();
+
     for (const file of selected) {
       const path = file.webkitRelativePath || '';
-      const key = identityKey(file.name, file.size, path, file.lastModified);
-      const prior = byIdentity.get(key) || byIdentity.get(identityKey(file.name, file.size, path));
+      const eKey = identityKey(file.name, file.size, path, file.lastModified);
+      let prior: Photo | undefined = exactMap.get(eKey) || undefined;
+
+      // Fallback: If not exact with path, or path is empty (selected as standalone file after folder import)
+      if (!prior) {
+        const cKey = JSON.stringify([file.name, file.size, file.lastModified]);
+        const cCandidates = (contentMap.get(cKey) || []).filter((p) => !claimedPriorIds.has(p.id));
+        if (cCandidates.length === 1) {
+          prior = cCandidates[0];
+        } else if (cCandidates.length > 1) {
+          const missingCandidates = cCandidates.filter((p) => p.missing);
+          if (missingCandidates.length === 1) {
+            prior = missingCandidates[0];
+          }
+        }
+      }
+
+      // Fallback: match by name and size if uniquely identified
+      if (!prior) {
+        const nsKey = JSON.stringify([file.name, file.size]);
+        const nsCandidates = (nameAndSizeMap.get(nsKey) || []).filter((p) => !claimedPriorIds.has(p.id));
+        if (nsCandidates.length === 1) {
+          prior = nsCandidates[0];
+        } else if (nsCandidates.length > 1) {
+          const missingCandidates = nsCandidates.filter((p) => p.missing);
+          if (missingCandidates.length === 1) {
+            prior = missingCandidates[0];
+          }
+        }
+      }
+
+      if (prior) {
+        claimedPriorIds.add(prior.id);
+      }
+
       const id = prior?.id || crypto.randomUUID();
       if (prepared.has(id)) continue;
       const preview = await makeThumbnail(file);
       const now = new Date().toISOString();
       const mimeType = file.type || ({ jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif', bmp: 'image/bmp', avif: 'image/avif' }[file.name.split('.').pop()?.toLowerCase() || ''] || 'application/octet-stream');
       const photo: Photo = {
-        id, source_id: 'source-local-input', original_filename: file.name, display_name: file.name,
-        mime_type: mimeType, file_size: file.size, liked: false, favorite: false, hidden: false, kept: false,
-        view_count: 0, created_at: now, ...prior,
-        relative_path: path, last_modified: file.lastModified,
-        width: preview.width, height: preview.height,
+        id,
+        source_id: 'source-local-input',
+        original_filename: file.name,
+        display_name: file.name,
+        mime_type: mimeType,
+        file_size: file.size,
+        liked: false,
+        favorite: false,
+        hidden: false,
+        kept: false,
+        view_count: 0,
+        created_at: now,
+        ...prior,
+        relative_path: path || prior?.relative_path || '',
+        last_modified: file.lastModified || prior?.last_modified,
+        width: preview.width,
+        height: preview.height,
         orientation: preview.width === preview.height ? 'square' : preview.width > preview.height ? 'landscape' : 'portrait',
-        url: '', thumbnail_url: undefined, missing: false, updated_at: now,
+        url: '',
+        thumbnail_url: undefined,
+        missing: false,
+        updated_at: now,
       };
       prepared.set(id, { photo, file, data: { photo_id: id, thumbnail: preview.thumbnail } });
-      if (!prior) byIdentity.set(key, photo);
+      if (!prior) {
+        exactMap.set(eKey, photo);
+      }
     }
     await db.transaction('rw', db.photos, db.photo_files, db.photo_sources, async () => {
       const now = new Date().toISOString();
@@ -119,6 +191,44 @@ export class PhotoRepository {
       sourceFiles.set(photo.id, file);
     }
     return this.hydrate([...prepared.values()].map(({ photo }) => photo));
+  }
+
+  /** Reconnects a specific missing photo with an explicit user-selected file. */
+  public static async reconnectSinglePhoto(photoId: string, file: File): Promise<Photo> {
+    const photo = await db.photos.get(photoId);
+    if (!photo) throw new Error('Foto tidak ditemukan di galeri.');
+    if (file.name !== photo.original_filename) {
+      throw new Error(`Nama berkas “${file.name}” tidak cocok dengan nama foto asli “${photo.original_filename}”.`);
+    }
+    if (photo.file_size && file.size !== photo.file_size) {
+      throw new Error(`Ukuran berkas (${file.size.toLocaleString()} byte) berbeda dari ukuran asli (${photo.file_size.toLocaleString()} byte).`);
+    }
+
+    const preview = await makeThumbnail(file);
+    const now = new Date().toISOString();
+    const mimeType = file.type || ({ jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif', bmp: 'image/bmp', avif: 'image/avif' }[file.name.split('.').pop()?.toLowerCase() || ''] || 'application/octet-stream');
+
+    await db.transaction('rw', db.photos, db.photo_files, async () => {
+      const stored = await db.photo_files.get(photoId);
+      await db.photo_files.put({
+        ...stored,
+        photo_id: photoId,
+        thumbnail: preview.thumbnail,
+      });
+      await db.photos.update(photoId, {
+        mime_type: mimeType,
+        last_modified: file.lastModified || photo.last_modified,
+        width: preview.width,
+        height: preview.height,
+        orientation: preview.width === preview.height ? 'square' : preview.width > preview.height ? 'landscape' : 'portrait',
+        missing: false,
+        updated_at: now,
+      });
+    });
+
+    forgetUrls(photoId);
+    sourceFiles.set(photoId, file);
+    return (await this.getById(photoId))!;
   }
 
   public static async importPublicDriveLinks(content: string): Promise<Photo[]> {

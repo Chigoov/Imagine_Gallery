@@ -159,14 +159,24 @@ export const CollectionDetailScreen: React.FC<CollectionDetailScreenProps> = ({
           ))}
         </div>
       ) : (
-        <div className="p-12 text-center border border-dashed border-subtle rounded-2xl space-y-3">
+        <div className="p-10 sm:p-12 text-center border border-dashed border-subtle rounded-2xl space-y-3.5 bg-surface/40">
           <div className="w-12 h-12 rounded-xl bg-elevated text-app-muted mx-auto flex items-center justify-center">
             <ImageIcon className="w-6 h-6" />
           </div>
-          <p className="text-sm font-semibold text-app-primary">Koleksi ini masih kosong</p>
-          <p className="text-xs text-app-muted">
-            Tambahkan foto dari Galeri atau gunakan tombol Simpan saat pemutar berjalan.
-          </p>
+          <div>
+            <p className="text-base font-bold text-app-primary">Koleksi ini masih kosong</p>
+            <p className="text-xs text-app-secondary max-w-sm mx-auto mt-1 leading-relaxed">
+              Tambahkan foto ke koleksi ini dari layar Galeri atau simpan foto yang sedang diputar.
+            </p>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onBack}
+            className="mt-1"
+          >
+            Kembali ke daftar koleksi
+          </Button>
         </div>
       )}
       <KeepPhotoSheet isOpen={!!photoToKeep} onClose={() => setPhotoToKeep(null)} photo={photoToKeep}

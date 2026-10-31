@@ -6,6 +6,7 @@ import { StatsSummary } from '../../types/calendar';
 import { NavTab } from '../../components/layout/DesktopSidebar';
 
 interface HomeScreenProps {
+  totalPhotosCount: number;
   stats: StatsSummary;
   recentCollections: Collection[];
   isSessionActive: boolean;
@@ -18,6 +19,7 @@ interface HomeScreenProps {
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
+  totalPhotosCount,
   stats,
   recentCollections,
   isSessionActive,
@@ -39,10 +41,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-app-primary">
-            Selamat datang kembali
+            {totalPhotosCount === 0 ? 'Selamat datang di Ruang Pribadi' : 'Selamat datang kembali'}
           </h1>
           <p className="text-sm text-app-muted mt-1">
-            Ruang visual pribadi • Galeri yang tersimpan di perangkat
+            {totalPhotosCount === 0
+              ? 'Ruang visual pribadi untuk galeri Anda di perangkat'
+              : `Ruang visual pribadi • ${totalPhotosCount} foto di galeri`}
           </p>
         </div>
 
@@ -56,6 +60,36 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           Tambah foto
         </Button>
       </div>
+
+      {/* EMPTY STATE ONBOARDING HERO CARD */}
+      {totalPhotosCount === 0 && (
+        <section className="bg-gradient-to-br from-surface via-elevated to-surface border border-accent/30 rounded-2xl p-5 sm:p-7 backdrop-blur-md shadow-glass relative overflow-hidden animate-fade-in">
+          <div className="absolute top-0 right-0 -mr-12 -mt-12 w-48 h-48 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="max-w-xl space-y-3.5 relative z-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/15 border border-accent/30 text-accent text-xs font-semibold">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Langkah Pertama</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold text-app-primary">
+              Mulai dengan menambahkan foto pertama Anda
+            </h2>
+            <p className="text-xs sm:text-sm text-app-secondary leading-relaxed">
+              Pilih foto dari berkas perangkat Anda atau muat dari tautan Google Drive publik. Foto lokal Anda disimpan langsung di perangkat tanpa analitik, sedangkan foto Drive dimuat dari Google sesuai pengaturan tautan.
+            </p>
+            <div className="pt-1 flex flex-col sm:flex-row gap-3">
+              <Button
+                variant="primary"
+                size="lg"
+                icon={<Plus className="w-5 h-5" />}
+                onClick={onAddPhotosClick}
+                className="w-full sm:w-auto shadow-lg shadow-accent/25"
+              >
+                Tambah foto pertama
+              </Button>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* TODAY SUMMARY CARD */}
       <section className="bg-surface/80 border border-subtle rounded-2xl p-5 md:p-6 backdrop-blur-md shadow-glass">
@@ -74,49 +108,63 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </button>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4 rounded-xl bg-elevated/60 border border-subtle">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <div className="p-3 sm:p-4 rounded-xl bg-elevated/60 border border-subtle">
             <p className="text-xs text-app-muted">Sesi</p>
-            <p className="text-2xl md:text-3xl font-bold text-app-primary mt-1">
+            <p className="text-xl sm:text-3xl font-bold text-app-primary mt-0.5 sm:mt-1">
               {stats.today_sessions}
             </p>
           </div>
 
-          <div className="p-4 rounded-xl bg-elevated/60 border border-subtle">
-            <p className="text-xs text-app-muted">Waktu berfantasi</p>
-            <p className="text-2xl md:text-3xl font-bold text-accent mt-1">
+          <div className="p-3 sm:p-4 rounded-xl bg-elevated/60 border border-subtle">
+            <p className="text-xs text-app-muted">Waktu pemutar</p>
+            <p className="text-xl sm:text-3xl font-bold text-accent mt-0.5 sm:mt-1">
               {formatMinutes(stats.today_duration_seconds)}
             </p>
           </div>
 
-          <div className="p-4 rounded-xl bg-elevated/60 border border-subtle">
+          <div className="p-3 sm:p-4 rounded-xl bg-elevated/60 border border-subtle">
             <p className="text-xs text-app-muted">Total mingguan</p>
-            <p className="text-2xl md:text-3xl font-bold text-app-primary mt-1">
+            <p className="text-xl sm:text-3xl font-bold text-app-primary mt-0.5 sm:mt-1">
               {stats.week_sessions} <span className="text-xs text-app-muted font-normal">sesi</span>
             </p>
           </div>
 
-          <div className="p-4 rounded-xl bg-elevated/60 border border-subtle">
+          <div className="p-3 sm:p-4 rounded-xl bg-elevated/60 border border-subtle">
             <p className="text-xs text-app-muted">Waktu minggu ini</p>
-            <p className="text-2xl md:text-3xl font-bold text-app-secondary mt-1">
+            <p className="text-xl sm:text-3xl font-bold text-app-secondary mt-0.5 sm:mt-1">
               {formatMinutes(stats.week_duration_seconds)}
             </p>
           </div>
         </div>
 
         {/* PRIMARY CTAs */}
-        <div className="mt-6 flex flex-col sm:flex-row gap-3">
-          <Button
-            variant="primary"
-            size="lg"
-            icon={<Play className="w-5 h-5 fill-current" />}
-            onClick={onStartSessionClick}
-            className="flex-1"
-          >
-            Mulai sesi baru
-          </Button>
+        {totalPhotosCount > 0 ? (
+          <div className="mt-6 flex flex-col sm:flex-row gap-3">
+            <Button
+              variant="primary"
+              size="lg"
+              icon={<Play className="w-5 h-5 fill-current" />}
+              onClick={onStartSessionClick}
+              className="flex-1 shadow-lg shadow-accent/25"
+            >
+              Mulai sesi
+            </Button>
 
-          {isSessionActive && (
+            {isSessionActive && (
+              <Button
+                variant="secondary"
+                size="lg"
+                icon={<RotateCcw className="w-5 h-5 text-accent" />}
+                onClick={onResumeSessionClick}
+                className="flex-1 border-accent/40 bg-accent/10 hover:bg-accent/20"
+              >
+                Lanjutkan sesi ({formatMinutes(activeSessionDuration)})
+              </Button>
+            )}
+          </div>
+        ) : isSessionActive ? (
+          <div className="mt-6 flex">
             <Button
               variant="secondary"
               size="lg"
@@ -126,8 +174,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             >
               Lanjutkan sesi ({formatMinutes(activeSessionDuration)})
             </Button>
-          )}
-        </div>
+          </div>
+        ) : null}
       </section>
 
       {/* RECENT COLLECTIONS */}

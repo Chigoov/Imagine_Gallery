@@ -18,11 +18,13 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   return (
     <header className="md:hidden flex items-center justify-between px-4 py-3 bg-surface/80 backdrop-blur-md border-b border-subtle sticky top-0 z-30 select-none">
       <div className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-player font-bold text-xs shadow">
-          ✦
-        </div>
+        <img
+          src="/favicon.png"
+          alt="Imagine Gallery"
+          className="w-7 h-7 rounded-lg object-contain shadow"
+        />
         <span className="text-sm font-semibold tracking-wide text-app-primary">
-          {title || 'PAPAN PRIBADI'}
+          {title || 'IMAGINE GALLERY'}
         </span>
       </div>
 

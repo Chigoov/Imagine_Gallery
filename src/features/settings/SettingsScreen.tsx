@@ -10,6 +10,13 @@ import {
   Eye,
   CheckCircle2,
   FileText,
+  AlertTriangle,
+  Heart,
+  Star,
+  Bookmark,
+  FolderHeart,
+  Pin,
+  Info,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
@@ -171,10 +178,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-app-primary">Kunci aplikasi</p>
-              <p className="text-xs text-app-muted">Gunakan PIN 4 digit untuk membuka aplikasi</p>
+              <p className="text-sm font-medium text-app-primary">Kunci aplikasi (PIN)</p>
+              <p className="text-xs text-app-secondary mt-0.5">
+                Kunci visual 4 digit untuk membuka tampilan aplikasi di layar
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -186,6 +195,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </Button>
               <input
                 type="checkbox"
+                aria-label="Aktifkan kunci PIN"
                 checked={settings.app_lock_enabled}
                 onChange={(e) => onUpdateSettings({ app_lock_enabled: e.target.checked })}
                 className="w-5 h-5 rounded text-accent bg-elevated border-subtle focus:ring-accent cursor-pointer"
@@ -193,24 +203,99 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          {/* Batas Proteksi PIN */}
+          <div className="p-3.5 rounded-xl bg-elevated/60 border border-subtle text-xs space-y-1.5">
+            <div className="flex items-center gap-1.5 font-semibold text-app-primary">
+              <Info className="w-4 h-4 text-accent" />
+              <span>Batas proteksi kunci PIN</span>
+            </div>
+            <p className="text-app-secondary leading-relaxed">
+              Kunci PIN berfungsi sebagai pembatas visual pada antarmuka aplikasi agar layar galeri tidak langsung terlihat saat aplikasi dibuka. Proteksi ini <strong>bukan enkripsi berkas</strong> pada penyimpanan perangkat. Berkas foto di perangkat Anda tidak dienkripsi secara disk/filesystem oleh aplikasi ini.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between pt-2">
             <div>
               <p className="text-sm font-medium text-app-primary">Sinkronisasi cloud</p>
-              <p className="text-xs text-app-muted">Dinonaktifkan secara bawaan untuk menjaga privasi</p>
+              <p className="text-xs text-app-secondary">Dinonaktifkan secara bawaan untuk menjaga privasi lokal</p>
             </div>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-surface text-app-muted border border-subtle font-medium">
-              Mati (hanya di perangkat ini)
+            <span className="text-xs px-2.5 py-1 rounded-full bg-surface text-app-secondary border border-subtle font-medium">
+              Mati (hanya lokal)
             </span>
           </div>
 
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-app-primary">Pelacakan penggunaan</p>
-              <p className="text-xs text-app-muted">Tidak ada analitik atau pelacakan aktivitas</p>
+              <p className="text-xs text-app-secondary">Tidak ada analitik atau pengiriman aktivitas ke luar</p>
             </div>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-surface text-app-muted border border-subtle font-medium">
-              OFF
+            <span className="text-xs px-2.5 py-1 rounded-full bg-surface text-app-secondary border border-subtle font-medium">
+              Nonaktif
             </span>
+          </div>
+        </div>
+      </section>
+
+      {/* ISTILAH PENGELOMPOKAN FOTO */}
+      <section className="bg-surface/90 border border-subtle rounded-2xl p-5 md:p-6 shadow-glass space-y-4">
+        <div className="flex items-center gap-2 border-b border-subtle pb-3">
+          <Info className="w-5 h-5 text-accent" />
+          <h2 className="text-base font-semibold text-app-primary">Istilah pengelompokan foto</h2>
+        </div>
+
+        <p className="text-xs text-app-secondary leading-relaxed">
+          Berikut adalah penjelasan fungsi setiap istilah pengelompokan yang ada di aplikasi:
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          <div className="p-3.5 rounded-xl bg-elevated/50 border border-subtle">
+            <span className="text-xs font-semibold text-heart flex items-center gap-1.5">
+              <Heart className="w-3.5 h-3.5 fill-current" />
+              Disukai
+            </span>
+            <p className="text-xs text-app-secondary mt-1 leading-relaxed">
+              Tanda suka cepat untuk menyaring foto di galeri dan memutar sesi khusus foto yang disukai.
+            </p>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-elevated/50 border border-subtle">
+            <span className="text-xs font-semibold text-fav flex items-center gap-1.5">
+              <Star className="w-3.5 h-3.5 fill-current" />
+              Favorit
+            </span>
+            <p className="text-xs text-app-secondary mt-1 leading-relaxed">
+              Tanda prioritas utama untuk akses cepat beranda dan pemutaran sesi khusus kumpulan foto favorit.
+            </p>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-elevated/50 border border-subtle">
+            <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5">
+              <Bookmark className="w-3.5 h-3.5 fill-current" />
+              Tersimpan (Salinan tersimpan)
+            </span>
+            <p className="text-xs text-app-secondary mt-1 leading-relaxed">
+              Salinan fisik berkas foto yang disimpan ke basis data aplikasi (IndexedDB) agar tidak perlu dipilih ulang setelah aplikasi dibuka kembali.
+            </p>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-elevated/50 border border-subtle">
+            <span className="text-xs font-semibold text-accent flex items-center gap-1.5">
+              <FolderHeart className="w-3.5 h-3.5" />
+              Koleksi
+            </span>
+            <p className="text-xs text-app-secondary mt-1 leading-relaxed">
+              Album bertema yang Anda buat untuk mengelompokkan sejumlah foto agar dapat diputar bersama.
+            </p>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-elevated/50 border border-subtle sm:col-span-2">
+            <span className="text-xs font-semibold text-pin flex items-center gap-1.5">
+              <Pin className="w-3.5 h-3.5 fill-current" />
+              Sematkan (PIN)
+            </span>
+            <p className="text-xs text-app-secondary mt-1 leading-relaxed">
+              Mengunci posisi foto pada slot layar pemutar. Foto yang disematkan tidak akan berganti saat foto lain berganti otomatis, manual, maupun diacak ulang.
+            </p>
           </div>
         </div>
       </section>
@@ -222,9 +307,21 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           <h2 className="text-base font-semibold text-app-primary">Cadangkan dan pindahkan data</h2>
         </div>
 
-        <p className="text-xs text-app-muted">
-          Cadangan menyertakan pratinjau galeri dan salinan foto yang disimpan lewat “Simpan salinan”. Foto lain perlu dipilih ulang; PIN tidak disertakan.
-        </p>
+        <div className="space-y-3">
+          <p className="text-xs text-app-secondary leading-relaxed">
+            Berkas cadangan (.json) mencakup metadata galeri, album koleksi, catatan kalender dan riwayat sesi, komposisi tersimpan, thumbnail pratinjau, serta berkas foto penuh (khusus foto dengan status <strong>Salinan tersimpan</strong>). Foto lokal biasa yang belum disimpan salinannya memerlukan pemilihan ulang berkas saat cadangan dipulihkan.
+          </p>
+
+          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200 space-y-1">
+            <div className="flex items-center gap-1.5 font-semibold text-accent">
+              <AlertTriangle className="w-4 h-4 text-accent shrink-0" />
+              <span>Keamanan berkas cadangan</span>
+            </div>
+            <p className="text-app-secondary leading-relaxed">
+              Berkas cadangan diekspor dalam format teks JSON <strong>tanpa enkripsi</strong>. Karena dapat memuat salinan foto pribadi Anda, simpan berkas JSON ini di lokasi yang aman dan jangan disebarkan secara sembarangan.
+            </p>
+          </div>
+        </div>
 
         {importStatus && (
           <div className="p-3 rounded-xl bg-accent/20 border border-accent/40 text-xs text-accent flex items-center gap-2">
@@ -233,7 +330,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
         )}
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3 pt-1">
           <Button
             variant="secondary"
             icon={<Download className="w-4 h-4" />}

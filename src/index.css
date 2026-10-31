@@ -10,7 +10,7 @@
   --bg-player: #090A0B;
   --text-primary: #F5F5F6;
   --text-secondary: #B8BBC2;
-  --text-muted: #7C808A;
+  --text-muted: #9498A3;
   --accent: #F59E0B;
 }
 
@@ -81,7 +81,6 @@ input, textarea { user-select: text; -webkit-user-select: text; }
   .dialog-sheet { margin: auto 0 0; width: 100%; max-width: none; border-radius: 16px 16px 0 0; }
 }
 @media (hover: none) {
-  .photo-card-actions { opacity: 1; }
   .player-controls { opacity: 1; transform: translateX(-50%); }
 }
 @media (prefers-reduced-motion: reduce) {

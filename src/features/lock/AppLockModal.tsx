@@ -91,9 +91,14 @@ export const AppLockModal: React.FC<AppLockModalProps> = ({
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-player text-app-primary select-none">
       {/* Branding and Privacy Shield */}
       <div className="w-full max-w-xs flex flex-col items-center text-center space-y-6">
-        <div className="w-16 h-16 rounded-2xl bg-surface border border-subtle flex items-center justify-center shadow-glass relative">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-700/20 flex items-center justify-center text-accent">
-            <Lock className="w-6 h-6" />
+        <div className="w-16 h-16 rounded-2xl bg-surface border border-subtle flex items-center justify-center shadow-glass relative p-2.5">
+          <img
+            src="/icon-192.png"
+            alt="Imagine Gallery"
+            className="w-full h-full object-contain"
+          />
+          <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-accent text-player flex items-center justify-center shadow">
+            <Lock className="w-3.5 h-3.5" />
           </div>
         </div>
 
@@ -162,6 +167,9 @@ export const AppLockModal: React.FC<AppLockModalProps> = ({
           </button>
         </div>
 
+        <p className="text-[11px] text-app-muted text-center pt-2 max-w-[260px] leading-relaxed">
+          Kunci layar visual pada aplikasi • Bukan enkripsi penyimpanan berkas
+        </p>
       </div>
     </div>
   );

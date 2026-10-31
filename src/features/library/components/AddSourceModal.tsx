@@ -139,9 +139,9 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({
         <div className="p-3 rounded-xl bg-elevated/60 border border-subtle flex items-start gap-3">
           <Shield className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
           <div className="text-xs space-y-1">
-            <p className="font-semibold text-app-primary">Berkas foto di perangkat</p>
-            <p className="text-app-muted">
-              Foto dibaca di browser. Berkas asli tidak diubah, dipindahkan, atau dihapus.
+            <p className="font-semibold text-app-primary">Penyimpanan foto & privasi</p>
+            <p className="text-app-secondary leading-relaxed">
+              Foto lokal dipilih langsung dari perangkat Anda dan diproses di browser tanpa diunggah ke server luar. Jika Anda menambahkan tautan Google Drive publik, gambar dimuat langsung dari server Google dan aksesnya mengikuti pengaturan tautan Drive tersebut.
             </p>
           </div>
         </div>

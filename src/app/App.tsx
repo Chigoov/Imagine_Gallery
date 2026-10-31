@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { NavTab, DesktopSidebar } from '../components/layout/DesktopSidebar';
 import { MobileBottomNav } from '../components/layout/MobileBottomNav';
 import { TopHeader } from '../components/layout/TopHeader';
@@ -236,7 +236,17 @@ function AppContent() {
   const handleStartSession = (config: SessionConfig) => {
     const pool = getEligiblePool(config.sourceKind, config.sourceId);
     if (pool.length === 0) {
-      showToast('Tidak ada foto yang bisa digunakan dari sumber ini.', 'error');
+      let reason = 'Tidak ada foto yang bisa digunakan dari sumber ini.';
+      if (photos.length === 0) {
+        reason = 'Galeri masih kosong. Tambahkan foto pertama Anda terlebih dahulu.';
+      } else if (config.sourceKind === 'favorites') {
+        reason = 'Belum ada foto yang ditandai Favorit (★). Tandai foto favorit di Galeri.';
+      } else if (config.sourceKind === 'liked') {
+        reason = 'Belum ada foto yang ditandai Disukai (♥). Beri tanda suka pada foto di Galeri.';
+      } else if (config.sourceKind === 'collection') {
+        reason = 'Koleksi ini belum memiliki foto yang dapat digunakan.';
+      }
+      showToast(reason, 'error');
       return;
     }
 
@@ -711,14 +721,41 @@ function AppContent() {
   // ADD FILES FROM LOCAL
   const handleAddFiles = async (files: FileList | File[]) => {
     try {
+      const priorPhotos = new Map(photos.map((p) => [p.id, p]));
       const imported = await PhotoRepository.importFiles(files);
+      let reconnectedCount = 0;
+      let newCount = 0;
+      for (const p of imported) {
+        const prior = priorPhotos.get(p.id);
+        if (prior && prior.missing) {
+          reconnectedCount++;
+        } else if (!prior) {
+          newCount++;
+        }
+      }
       setPhotos((prev) => {
         const byId = new Map(prev.map((photo) => [photo.id, photo]));
         for (const photo of imported) byId.set(photo.id, photo);
         return [...byId.values()];
       });
-      showToast(`${imported.length} foto ditambahkan atau ditautkan kembali.`, 'success');
+      if (reconnectedCount > 0 && newCount > 0) {
+        showToast(`${reconnectedCount} foto dihubungkan kembali dan ${newCount} foto baru ditambahkan.`, 'success');
+      } else if (reconnectedCount > 0) {
+        showToast(`${reconnectedCount} foto berhasil dihubungkan kembali.`, 'success');
+      } else {
+        showToast(`${imported.length} foto ditambahkan ke galeri.`, 'success');
+      }
     } catch (error) { showToast(error instanceof Error ? error.message : 'Foto tidak dapat ditambahkan.', 'error'); }
+  };
+
+  const handleReconnectPhoto = async (photoId: string, file: File) => {
+    try {
+      const updated = await PhotoRepository.reconnectSinglePhoto(photoId, file);
+      setPhotos((prev) => prev.map((p) => p.id === updated.id ? updated : p));
+      showToast(`Foto “${updated.display_name}” berhasil dihubungkan kembali.`, 'success');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Gagal menghubungkan berkas foto.', 'error');
+    }
   };
 
   const handleAddDriveLinks = async (links: string) => {
@@ -801,6 +838,28 @@ function AppContent() {
   const statsSummary: StatsSummary = CalendarAggregator.computeStats(calendarEntries);
   const shownSessionDuration = isSessionActive ? sessionDurationSeconds
     : resumableSnapshot ? Math.floor((Date.now() - resumableSnapshot.startedAt) / 1000) : 0;
+
+  // Compute accurate ready-to-play photos count (excluding missing and hidden)
+  const readyPhotosCount = useMemo(() => photos.filter((p) => !p.hidden && !p.missing).length, [photos]);
+  const totalPhotosCount = useMemo(() => photos.filter((p) => !p.hidden).length, [photos]);
+
+  const readyFavoritesCount = useMemo(() => photos.filter((p) => p.favorite && !p.hidden && !p.missing).length, [photos]);
+  const totalFavoritesCount = useMemo(() => photos.filter((p) => p.favorite && !p.hidden).length, [photos]);
+
+  const readyLikedCount = useMemo(() => photos.filter((p) => p.liked && !p.hidden && !p.missing).length, [photos]);
+  const totalLikedCount = useMemo(() => photos.filter((p) => p.liked && !p.hidden).length, [photos]);
+
+  const enrichedCollections = useMemo(() => {
+    const activePhotoIds = new Set(photos.filter((p) => !p.hidden && !p.missing).map((p) => p.id));
+    return collections.map((col) => {
+      const ids = collectionPhotoIds[col.id] || [];
+      const readyCount = ids.filter((id) => activePhotoIds.has(id)).length;
+      return {
+        ...col,
+        ready_count: readyCount,
+      };
+    });
+  }, [collections, photos, collectionPhotoIds]);
 
   // BACKUP EXPORT & RESTORE
   const handleExportBackup = async () => {
@@ -961,12 +1020,16 @@ function AppContent() {
         <StartSessionModal
           isOpen={isStartModalOpen}
           onClose={() => setIsStartModalOpen(false)}
-          collections={collections}
-          totalPhotosCount={photos.filter((p) => !p.hidden).length}
-          favoritesCount={photos.filter((p) => p.favorite && !p.hidden).length}
-          likedCount={photos.filter((p) => p.liked && !p.hidden).length}
+          collections={enrichedCollections}
+          readyPhotosCount={readyPhotosCount}
+          totalPhotosCount={totalPhotosCount}
+          readyFavoritesCount={readyFavoritesCount}
+          totalFavoritesCount={totalFavoritesCount}
+          readyLikedCount={readyLikedCount}
+          totalLikedCount={totalLikedCount}
           defaultSettings={settings}
           onStartSession={handleStartSession}
+          onNavigateToLibrary={() => setCurrentTab('library')}
         />
         <AppLockModal
           isOpen={isAppLocked || isPinSetupOpen}
@@ -1046,8 +1109,9 @@ function AppContent() {
             />
           ) : currentTab === 'home' ? (
             <HomeScreen
+              totalPhotosCount={photos.length}
               stats={statsSummary}
-              recentCollections={collections}
+              recentCollections={enrichedCollections}
               isSessionActive={isSessionActive || !!resumableSnapshot}
               activeSessionDuration={shownSessionDuration}
               onStartSessionClick={() => setIsStartModalOpen(true)}
@@ -1059,7 +1123,7 @@ function AppContent() {
           ) : currentTab === 'library' ? (
             <LibraryScreen
               photos={photos}
-              collections={collections}
+              collections={enrichedCollections}
               initialFilter="all"
               onPhotoClick={() => {}}
               onToggleLike={handleToggleLike}
@@ -1068,6 +1132,7 @@ function AppContent() {
               onKeepPhoto={handleKeepPhoto}
               onToggleHide={handleToggleHide}
               onAddFiles={handleAddFiles}
+              onReconnectPhoto={handleReconnectPhoto}
               onAddDriveLinks={handleAddDriveLinks}
               onRemoveDriveLink={handleRemoveDriveLink}
               onCreateCollection={handleCreateCollection}
@@ -1075,7 +1140,7 @@ function AppContent() {
           ) : currentTab === 'favorites' ? (
             <LibraryScreen
               photos={photos}
-              collections={collections}
+              collections={enrichedCollections}
               initialFilter="favorites"
               onPhotoClick={() => {}}
               onToggleLike={handleToggleLike}
@@ -1084,6 +1149,7 @@ function AppContent() {
               onKeepPhoto={handleKeepPhoto}
               onToggleHide={handleToggleHide}
               onAddFiles={handleAddFiles}
+              onReconnectPhoto={handleReconnectPhoto}
               onAddDriveLinks={handleAddDriveLinks}
               onRemoveDriveLink={handleRemoveDriveLink}
               onCreateCollection={handleCreateCollection}
@@ -1091,7 +1157,7 @@ function AppContent() {
           ) : currentTab === 'liked' ? (
             <LibraryScreen
               photos={photos}
-              collections={collections}
+              collections={enrichedCollections}
               initialFilter="liked"
               onPhotoClick={() => {}}
               onToggleLike={handleToggleLike}
@@ -1100,13 +1166,14 @@ function AppContent() {
               onKeepPhoto={handleKeepPhoto}
               onToggleHide={handleToggleHide}
               onAddFiles={handleAddFiles}
+              onReconnectPhoto={handleReconnectPhoto}
               onAddDriveLinks={handleAddDriveLinks}
               onRemoveDriveLink={handleRemoveDriveLink}
               onCreateCollection={handleCreateCollection}
             />
           ) : currentTab === 'collections' ? (
             <CollectionsScreen
-              collections={collections}
+              collections={enrichedCollections}
               onSelectCollection={(col) => setSelectedCollection(col)}
               onStartSession={(col) => {
                 handleStartSession({
@@ -1150,8 +1217,9 @@ function AppContent() {
             />
           ) : (
             <HomeScreen
+              totalPhotosCount={photos.length}
               stats={statsSummary}
-              recentCollections={collections}
+              recentCollections={enrichedCollections}
               isSessionActive={isSessionActive || !!resumableSnapshot}
               activeSessionDuration={shownSessionDuration}
               onStartSessionClick={() => setIsStartModalOpen(true)}
@@ -1182,12 +1250,16 @@ function AppContent() {
       <StartSessionModal
         isOpen={isStartModalOpen}
         onClose={() => setIsStartModalOpen(false)}
-        collections={collections}
-        totalPhotosCount={photos.filter((p) => !p.hidden).length}
-        favoritesCount={photos.filter((p) => p.favorite && !p.hidden).length}
-        likedCount={photos.filter((p) => p.liked && !p.hidden).length}
+        collections={enrichedCollections}
+        readyPhotosCount={readyPhotosCount}
+        totalPhotosCount={totalPhotosCount}
+        readyFavoritesCount={readyFavoritesCount}
+        totalFavoritesCount={totalFavoritesCount}
+        readyLikedCount={readyLikedCount}
+        totalLikedCount={totalLikedCount}
         defaultSettings={settings}
         onStartSession={handleStartSession}
+        onNavigateToLibrary={() => setCurrentTab('library')}
       />
 
       {/* App Lock Screen Modal */}

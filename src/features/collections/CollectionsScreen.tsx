@@ -56,59 +56,82 @@ export const CollectionsScreen: React.FC<CollectionsScreenProps> = ({
       </div>
 
       {/* Collections Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-        {collections.map((col) => (
-          <div
-            key={col.id}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); onSelectCollection(col); } }}
-            onClick={() => onSelectCollection(col)}
-            className="group relative h-56 rounded-2xl overflow-hidden border border-subtle hover:border-strong cursor-pointer transition-all duration-200 shadow-glass flex flex-col justify-between p-5 bg-surface"
-          >
-            {/* Background cover */}
-            <img
-              src={col.cover_photo_url || undefined}
-              referrerPolicy="no-referrer"
-              hidden={!col.cover_photo_url}
-              loading="lazy"
-              alt={col.name}
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 filter brightness-70 group-hover:brightness-85 pointer-events-none"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-player via-player/40 to-transparent pointer-events-none" />
-
-            {/* Top Quick Actions */}
-            <div className="relative z-10 flex items-center justify-between">
-              <span className="px-2.5 py-1 rounded-full bg-player/80 backdrop-blur-md border border-white/10 text-xs font-semibold text-accent">
-                {col.photo_count} foto
-              </span>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onStartSession(col);
-                }}
-                className="p-2 rounded-xl bg-accent text-player hover:bg-accent-hover shadow-md font-bold transition-transform active:scale-95"
-                title="Mulai sesi dengan koleksi ini"
-              >
-                <Play className="w-4 h-4 fill-current" />
-              </button>
-            </div>
-
-            {/* Bottom info */}
-            <div className="relative z-10 space-y-1">
-              <h3 className="text-lg font-bold text-app-primary group-hover:text-accent transition-colors line-clamp-1">
-                {col.name}
-              </h3>
-              {col.description && (
-                <p className="text-xs text-app-secondary line-clamp-2 opacity-80">
-                  {col.description}
-                </p>
-              )}
-            </div>
+      {collections.length === 0 ? (
+        <div className="p-10 sm:p-12 text-center border border-dashed border-subtle rounded-2xl space-y-3.5 bg-surface/40">
+          <div className="w-12 h-12 rounded-xl bg-elevated text-accent mx-auto flex items-center justify-center">
+            <FolderHeart className="w-6 h-6" />
           </div>
-        ))}
-      </div>
+          <div>
+            <p className="text-base font-bold text-app-primary">Belum ada koleksi</p>
+            <p className="text-xs text-app-secondary max-w-md mx-auto mt-1 leading-relaxed">
+              Koleksi membantu Anda mengelompokkan beberapa foto bertema khusus agar dapat diputar bersama dalam satu sesi.
+            </p>
+          </div>
+          <Button
+            variant="primary"
+            size="sm"
+            icon={<Plus className="w-4 h-4" />}
+            onClick={() => setIsCreateModalOpen(true)}
+            className="mt-1 shadow-md shadow-accent/20"
+          >
+            Buat koleksi pertama
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+          {collections.map((col) => (
+            <div
+              key={col.id}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); onSelectCollection(col); } }}
+              onClick={() => onSelectCollection(col)}
+              className="group relative h-56 rounded-2xl overflow-hidden border border-subtle hover:border-strong cursor-pointer transition-all duration-200 shadow-glass flex flex-col justify-between p-5 bg-surface"
+            >
+              {/* Background cover */}
+              <img
+                src={col.cover_photo_url || undefined}
+                referrerPolicy="no-referrer"
+                hidden={!col.cover_photo_url}
+                loading="lazy"
+                alt={col.name}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 filter brightness-70 group-hover:brightness-85 pointer-events-none"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-player via-player/40 to-transparent pointer-events-none" />
+
+              {/* Top Quick Actions */}
+              <div className="relative z-10 flex items-center justify-between">
+                <span className="px-2.5 py-1 rounded-full bg-player/80 backdrop-blur-md border border-white/10 text-xs font-semibold text-accent">
+                  {col.photo_count} foto
+                </span>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onStartSession(col);
+                  }}
+                  className="p-2 rounded-xl bg-accent text-player hover:bg-accent-hover shadow-md font-bold transition-transform active:scale-95"
+                  title="Mulai sesi dengan koleksi ini"
+                >
+                  <Play className="w-4 h-4 fill-current" />
+                </button>
+              </div>
+
+              {/* Bottom info */}
+              <div className="relative z-10 space-y-1">
+                <h3 className="text-lg font-bold text-app-primary group-hover:text-accent transition-colors line-clamp-1">
+                  {col.name}
+                </h3>
+                {col.description && (
+                  <p className="text-xs text-app-secondary line-clamp-2 opacity-80">
+                    {col.description}
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Dialog pembuatan koleksi */}
       <Modal

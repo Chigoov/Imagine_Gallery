@@ -14,7 +14,7 @@ export default {
         player: '#090A0B',
         'app-primary': '#F5F5F6',
         'app-secondary': '#B8BBC2',
-        'app-muted': '#7C808A',
+        'app-muted': '#9498A3',
         accent: {
           DEFAULT: '#F59E0B',
           hover: '#D97706',
